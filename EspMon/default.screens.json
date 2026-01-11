@@ -1,0 +1,111 @@
+﻿[
+  {
+    "top": {
+      "label": "CPU",
+      "color": "light-blue",
+      "value1": {
+        "color": "green",
+        "max": 100,
+        "suffix": "%",
+        "match": ".+cpu.+load.*/0"
+      },
+      "value2": {
+        "color": "orange",
+        "max": 100,
+        "suffix": "°",
+        "match": ".+cpu.+temperature/0$",
+        "gradient": true
+      }
+    },
+    "bottom": {
+      "label": "GPU",
+      "color": "light-salmon",
+      "value1": {
+        "color": "white",
+        "max": 100,
+        "suffix": "%",
+        "match": ".+gpu.+load.*/0"
+      },
+      "value2": {
+        "color": "purple",
+        "max": 85,
+        "suffix": "°",
+        "match": ".+gpu.+temp.+/0",
+        "gradient": true
+      }
+    }
+  },
+  {
+    "top": {
+      "label": "CPU",
+      "color": "sky-blue",
+      "value1": {
+        "color": "light-green",
+        "max": 6000,
+        "suffix": "",
+        "match": ".+cpu/0/clock/0"
+      },
+      "value2": {
+        "color": "tan",
+        "max": 100,
+        "suffix": "°",
+        "match": ".+cpu.+temperature/0$",
+        "gradient": true
+      }
+    },
+    "bottom": {
+      "label": "GPU",
+      "color": "aquamarine",
+      "value1": {
+        "color": "orange",
+        "max": 3000,
+        "suffix": "",
+        "match": ".+gpu.+clock.*/0",
+        "gradient": true
+      },
+      "value2": {
+        "color": "dark-green",
+        "max": 100,
+        "suffix": "°",
+        "match": ".gpu.+temp.+/0",
+        "gradient": true
+      }
+    }
+  },
+  {
+    "top": {
+      "label": "RAM",
+      "color": "light-green",
+      "value1": {
+        "color": "green",
+        "max": 100,
+        "suffix": "%",
+        "match": ".+ram.+load.*/0"
+      },
+      "value2": {
+        "color": "blue",
+        "max": 10000,
+        "suffix": "",
+        "match": ".+ram.+data/0$"
+      }
+    },
+    "bottom": {
+      "label": "Disk",
+      "color": "dark-red",
+      "value1": {
+        "color": "yellow",
+        "max": 100,
+        "suffix": "%",
+        "match": ".+hdd.+load.*/0",
+        "gradient": true
+      },
+      "value2": {
+        "color": "brown",
+        "max": 100,
+        "suffix": "°",
+        "match": ".+hdd.+temp.+/0",
+        "gradient": true
+      }
+    }
+  }
+]

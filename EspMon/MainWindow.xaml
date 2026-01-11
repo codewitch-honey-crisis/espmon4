@@ -1,0 +1,63 @@
+<Window x:Class="EspMon.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:EspMon"
+        mc:Ignorable="d" MinWidth="300" MinHeight="200"
+        Title="Esp Mon 4" Height="200" Width="300" Loaded="MainWindow_Loaded">
+    <Grid ShowGridLines="False" Margin="3">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!--<Label x:Name="cpuTmaxLabel" Content="CPU TMax:" DockPanel.Dock="Left" Grid.Column="0" Visibility="{Binding MainVisibility}"/>
+        <TextBox x:Name="cpuTmax" Text="{Binding CpuTMax}" VerticalContentAlignment="Center" Grid.Column="1" Margin="3" Visibility="{Binding MainVisibility}"/>
+
+        <Label x:Name="gpuTmaxLabel" Content="GPU TMax:" DockPanel.Dock="Left" Grid.Column="2" Visibility="{Binding MainVisibility}"/>
+        <TextBox x:Name="gpuTmax" Text="{Binding GpuTMax}" VerticalContentAlignment="Center" Grid.Column="3" Margin="3" Visibility="{Binding MainVisibility}"/>-->
+
+
+        <Label x:Name="comPortsLabel" Content="COM Ports:" Grid.Column="0" Grid.Row="1" Visibility="{Binding MainVisibility}"/>
+        <Button x:Name="comPortsRefresh" Content="Refresh" DockPanel.Dock="Left" Click="comPortsRefresh_Click" Grid.Column="1" Grid.Row="1" Margin="3" Visibility="{Binding MainVisibility}"/>
+
+        <DockPanel Grid.Column="2" Grid.Row="1" Grid.ColumnSpan="2" Grid.RowSpan="2" Margin="3" Visibility="{Binding MainVisibility}">
+            <CheckBox x:Name="isStartedCheckbox" IsChecked="{Binding IsStarted}" Content="Started" DockPanel.Dock="Top" />
+            <CheckBox x:Name="serviceInstalledButton" IsChecked="{Binding IsPersistent}" Content="Persistent" DockPanel.Dock="Bottom" />
+        </DockPanel>
+        <ListBox x:Name="comPortsList" ItemsSource="{Binding PortItems}" Margin="3" Grid.Row="3" Grid.ColumnSpan="4" Visibility="{Binding MainVisibility}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <DockPanel>
+                        <CheckBox DockPanel.Dock="Left" IsChecked="{Binding IsChecked}" Content="{Binding Name}"/>
+                    </DockPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <Button x:Name="flashDevice" Content="Flash Device &gt;" Grid.Row="4" Margin="3" Grid.ColumnSpan="4" Visibility="{Binding FlashButtonVisibility}" Click="flashDevice_Click"/>
+
+        <Label x:Name="comPortLabel" Content="COM Port:" Margin="3" Grid.Column="0" Grid.Row="0" Visibility="{Binding FlashingVisibility}" HorizontalAlignment="Right"/>
+        <ComboBox x:Name="comPortCombo" Margin="3" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" Visibility="{Binding FlashingVisibility}" IsEnabled="{Binding IsIdle}"/>
+        <Button x:Name="refreshComPortCombo" Content="Refresh" Margin="3" Grid.Row="0" Grid.Column="3" Visibility="{Binding FlashingVisibility}" Click="refreshComPortCombo_Click" IsEnabled="{Binding IsIdle}"/>
+        <Label x:Name="deviceLabel" Content="Device:" Margin="3" Grid.Column="0" Grid.Row="1" Visibility="{Binding FlashingVisibility}" HorizontalAlignment="Right"/>
+        <ComboBox x:Name="deviceCombo" Margin="3" Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="2" Visibility="{Binding FlashingVisibility}" IsEnabled="{Binding IsIdle}"/>
+        <Button x:Name="flashDeviceButton" Content="Flash" Margin="3" Grid.Row="1" Grid.Column="3" Visibility="{Binding FlashingVisibility}" Click="flashDeviceButton_Click" IsEnabled="{Binding IsIdle}"/>
+        <ProgressBar Grid.Row="2" Grid.ColumnSpan="4" Minimum="0" Maximum="100" Value="{Binding FlashProgress}" Visibility="{Binding FlashingVisibility}"/>
+        <TextBox x:Name="output" IsReadOnly="True" TextWrapping="Wrap" Margin="3" VerticalScrollBarVisibility="Visible" Grid.Row="3" Grid.ColumnSpan="4" Visibility="{Binding FlashingVisibility}" Text="{Binding OutputText}" TextChanged="output_TextChanged"/>
+        <Button x:Name="back" Content="Back &lt;" Margin="3" Grid.Row="4" Grid.ColumnSpan="4" Visibility="{Binding FlashingVisibility}" Click="back_Click" IsEnabled="{Binding IsIdle}"/>
+        <StatusBar x:Name="mainStatus"  Grid.Row="5" Grid.ColumnSpan="4" >
+            <Button x:Name="updateButton" Content="Install latest version..." Visibility="{Binding UpdateVisibility}" IsEnabled="{Binding IsIdle}" Click="updateButton_Click"/>
+        </StatusBar>
+    </Grid>
+</Window>
