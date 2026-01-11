@@ -1,4 +1,4 @@
-# EspMon3
+# EspMon4 (work in progress)
 
 EspMon is a PC hardware monitor that displays CPU/GPU temps and usages.
 
@@ -13,17 +13,12 @@ Clicking "Flash Device >" gives you the option to flash the firmware to any conn
 Current device support (other ESP32 based devices can easily be added by editing lcd_config.h and platformio.ini):
 
 - Lilygo TTGO T1 Display
-- Lilygo TTGO T-Display S3
 - M5 Stack Core 2
-- M5 Stack Fire
-- Espressif ESP_WROVER_KIT 4.1
-- Makerfabs ESP Display Parellel 3.5inch
 - Makerfabs ESP Display 4inch**
-- Makerfabs ESP Display 4.3inch**
-- Makerfabs ESP Display 7inch (1024x600)
+- Makerfabs ESP Display 4.3inch
 - Waveshare ESP32S3 4.3inch
 
-** presently display artifacts due to lcd_config.h settings issues
+** presently display artifacts due to display settings issues
 
 ### Devices with multiple USB inputs
 
@@ -35,7 +30,7 @@ The displayed graph is vertically 1 horizontal line for every 10%, and horizonta
 
 ### Instructions for adding more devices
 
-1. Edit `include/lcd_config.h` to add an entry with your display's specific settings and wiring. Use one of the existing devices as a template, and then change the `#define`name from the original (like `M5STACK_CORE2` to your own name)
+1. Add `include/custom_panels.h` to add an entry with your display's specific settings and wiring. Use one of the existing devices as a template, and then change the `#define`name from the original (like `M5STACK_CORE2` to your own name)
 
 2. Edit the `platformio.ini` to add an entry for your device. Make sure to add your new `#define` name for the lcd settings to your `build_flags` entry. Use one of the existing entries as a template.
 
