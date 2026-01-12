@@ -99,6 +99,8 @@
         }\
      }\
      bitmap = ssd1306_buffer;
+#define BUTTON_MASK BUTTON_PIN(0)
+#define BUTTON_ON_LEVEL 0
 #endif // ESP32_S3_DEVKITC_1
 
 #ifdef IDEASPARK_19

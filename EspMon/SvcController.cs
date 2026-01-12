@@ -143,7 +143,7 @@ namespace EspMon
 			for (int i = 0; i < names.Length; ++i)
 			{
 				var idx = IndexOfPort(portNames, names[i]);
-				if (i > -1)
+				if (i > -1 && i<portNames.Count)
 				{
 					portNames.RemoveAt(idx);
 				}

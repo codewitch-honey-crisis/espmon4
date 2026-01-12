@@ -546,6 +546,9 @@ static void refresh_display() {
     }
 }
 extern "C" void app_main() {
+#ifdef BUTTON
+    panel_button_init();
+#endif
 #ifdef POWER
     panel_power_init();
 #endif
@@ -555,9 +558,6 @@ extern "C" void app_main() {
     panel_lcd_init();
 #ifdef TOUCH_BUS
     panel_touch_init();
-#endif
-#ifdef BUTTON
-    panel_button_init();
 #endif
 #ifdef LCD_BCKL_PWM
     panel_lcd_backlight(64);
