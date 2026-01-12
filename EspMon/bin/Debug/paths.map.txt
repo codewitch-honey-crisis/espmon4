@@ -45,10 +45,6 @@
 /lpc/nct6798d/voltage/10/parameter/ri[kω]
 /lpc/nct6798d/voltage/10/parameter/rf[kω]
 /lpc/nct6798d/voltage/10/parameter/vf[v]
-/lpc/nct6798d/voltage/11
-/lpc/nct6798d/voltage/11/parameter/ri[kω]
-/lpc/nct6798d/voltage/11/parameter/rf[kω]
-/lpc/nct6798d/voltage/11/parameter/vf[v]
 /lpc/nct6798d/voltage/12
 /lpc/nct6798d/voltage/12/parameter/ri[kω]
 /lpc/nct6798d/voltage/12/parameter/rf[kω]
@@ -67,6 +63,8 @@
 /lpc/nct6798d/temperature/2/parameter/offset[°c]
 /lpc/nct6798d/temperature/4
 /lpc/nct6798d/temperature/4/parameter/offset[°c]
+/lpc/nct6798d/temperature/5
+/lpc/nct6798d/temperature/5/parameter/offset[°c]
 /lpc/nct6798d/temperature/6
 /lpc/nct6798d/temperature/6/parameter/offset[°c]
 /lpc/nct6798d/fan/0

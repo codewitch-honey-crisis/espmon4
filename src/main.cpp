@@ -172,11 +172,17 @@ class bar : public control<ControlSurfaceType> {
 public:
     using type = bar;
     using control_surface_type = ControlSurfaceType;
+#if LCD_HEIGHT < 128
+    using buffer_t = data::circular_buffer<uint8_t,100>;
+#endif
 private:
     rgba_pixel<32> m_color;
     rgba_pixel<32> m_back_color;
     bool m_is_gradient;
     float m_value;
+#if LCD_HEIGHT < 128
+    buffer_t m_buffer;
+#endif
 public:
     bar() : base_type(), m_is_gradient(false), m_value(0) {
         static constexpr const rgb_pixel<24> px(0,255,0);
@@ -199,7 +205,22 @@ public:
             m_value = value;
             this->invalidate();
         }
+#if LCD_HEIGHT < 128
+        if(m_buffer.size()==m_buffer.capacity) {
+            uint8_t tmp;
+            m_buffer.get(&tmp);
+        }
+        m_buffer.put((uint8_t)(value*255));
+        this->invalidate();
+#endif
+
     }
+#if LCD_HEIGHT < 128
+    void clear() {
+        m_buffer.clear();
+        this->invalidate();
+    }
+#endif
     bool is_gradient() const {
         return m_is_gradient;
     }
@@ -309,6 +330,26 @@ protected:
         } else {
             draw::filled_rectangle(destination,srect16(0,0,destination.dimensions().width-1,y_end),m_back_color);
         }
+#if LCD_HEIGHT < 128
+        if(m_buffer.size()>0) {
+            float x_step = (destination.dimensions().width-1)/(float)(buffer_t::capacity-1);
+            float x = x_step;
+            point16 opt(0,y_end);
+            size_t i = 0;
+            auto px = (m_value==0)?m_color:uix_color_t::black;
+            while(i<m_buffer.size()) {
+                uint8_t v=255-*m_buffer.peek(i);
+                point16 pt(x,v*(y_end)/255);
+                draw::line(destination,rect16(opt,pt),px);
+                if(x>x_end) {
+                    px=m_color;
+                }
+                opt=pt;
+                x+=x_step;
+                ++i;           
+            }
+        }
+#endif
     }
 };
 using bar_t = bar<screen_t::control_surface_type>;
@@ -602,7 +643,6 @@ extern "C" void app_main() {
     b.x2 = main_screen.dimensions().width-1;
     b.y2-=2;
     top_value1_bar.bounds(b);
-    top_value1_bar.value(0);
     main_screen.register_control(top_value1_bar);
 
     b=top_value2_label.bounds();
@@ -613,7 +653,6 @@ extern "C" void app_main() {
     auto px = uix_color_t::white;
     top_value2_bar.color(px);
     top_value2_bar.is_gradient(true);
-    top_value2_bar.value(0);
     main_screen.register_control(top_value2_bar);
     
 
@@ -642,7 +681,6 @@ extern "C" void app_main() {
     b.x2 = main_screen.dimensions().width-1;
     b.y2-=2;
     bottom_value1_bar.bounds(b);
-    bottom_value1_bar.value(0);
     bottom_value1_bar.color(uix_color_t::white);
     main_screen.register_control(bottom_value1_bar);
 
@@ -654,7 +692,6 @@ extern "C" void app_main() {
     px = uix_color_t::white;
     bottom_value2_bar.color(px);
     bottom_value2_bar.is_gradient(true);
-    bottom_value2_bar.value(0);
     main_screen.register_control(bottom_value2_bar);
     
 #if LCD_HEIGHT>128
@@ -753,6 +790,11 @@ static void loop() {
             history_graph.set_line(1,to_color(scr.top_color2));
             history_graph.set_line(2,to_color(scr.bottom_color1));
             history_graph.set_line(3,to_color(scr.bottom_color2));
+#else
+            top_value1_bar.clear();
+            top_value2_bar.clear();
+            bottom_value1_bar.clear();
+            bottom_value2_bar.clear();
 #endif
             refresh_display();
             cmd = serial_read_packet(&resp);
@@ -839,6 +881,12 @@ static void loop() {
         refresh_display();
 #if LCD_HEIGHT>128
         history_graph.clear_data();
+        refresh_display();
+#else
+        top_value1_bar.clear();
+        top_value2_bar.clear();
+        bottom_value1_bar.clear();
+        bottom_value2_bar.clear();
         refresh_display();
 #endif
         disconnected_label.visible(true);
