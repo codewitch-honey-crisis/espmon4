@@ -31,6 +31,9 @@ static void uix_on_flush(const rect16& bounds,const void *bitmap, void* state) {
 }
 #if defined(TOUCH_BUS) || defined(BUTTON)
 static TickType_t pressed = 0;
+static bool dark_mode = true;
+#else
+static const bool dark_mode = true;
 #endif
 const_buffer_stream text_font_stm(bungee,sizeof(bungee));
 
@@ -336,7 +339,7 @@ protected:
             float x = x_step;
             point16 opt(0,y_end);
             size_t i = 0;
-            auto px = (m_value==0)?m_color:uix_color_t::black;
+            auto px = (m_value==0)?m_color:dark_mode?uix_color_t::black:uix_color_t::white;
             while(i<m_buffer.size()) {
                 uint8_t v=255-*m_buffer.peek(i);
                 point16 pt(x,v*(y_end)/255);
@@ -542,7 +545,7 @@ static void refresh_display() {
 }
 #if defined(TOUCH_BUS) || defined(BUTTON)
 static void switch_light_dark_mode() {
-    if(main_screen.background_color()==color_t::black) {
+    if(dark_mode) {
         main_screen.background_color(color_t::white);
         value1_label.background_color(uix_color_t::white);
         value2_label.background_color(uix_color_t::white);
@@ -553,7 +556,7 @@ static void switch_light_dark_mode() {
         bottom_value1_label.color(uix_color_t::black);
         bottom_value1_label.background_color(uix_color_t::white);
         bottom_value2_label.color(uix_color_t::black);
-        bottom_value1_label.background_color(uix_color_t::white);
+        bottom_value2_label.background_color(uix_color_t::white);
         disconnected_label.background_color(uix_color_t::white);
         disconnected_label.color(uix_color_t::black);
         refresh_display();
@@ -573,6 +576,7 @@ static void switch_light_dark_mode() {
         disconnected_label.color(uix_color_t::white);
         refresh_display();
     }
+    dark_mode=!dark_mode;
 }
 static void update_input() {
 #ifdef TOUCH_BUS
@@ -598,15 +602,18 @@ static void update_input() {
 #endif
 #ifdef BUTTON
     if(panel_button_read_all()) {
+        puts("pressed");
         if(pressed==0) {
             pressed = xTaskGetTickCount();
         }
     } else {
-        if(xTaskGetTickCount()>=pressed+pdMS_TO_TICKS(250)) {
-            switch_light_dark_mode();
-        } else if(!disconnected_label.visible()) {
-            screen_index++;
-            serial_write(0,screen_index);
+        if(pressed>0) {
+            if(xTaskGetTickCount()>=pressed+pdMS_TO_TICKS(250)) {
+                switch_light_dark_mode();
+            } else if(!disconnected_label.visible()) {
+                screen_index++;
+                serial_write(0,screen_index);
+            }
         }
         pressed = 0;
     }
@@ -684,6 +691,7 @@ extern "C" void app_main() {
     b.x2 = main_screen.dimensions().width-1;
     b.y2-=2;
     top_value1_bar.bounds(b);
+    top_value1_bar.back_color(uix_color_t::black);
     main_screen.register_control(top_value1_bar);
 
     b=top_value2_label.bounds();
@@ -694,6 +702,7 @@ extern "C" void app_main() {
     auto px = uix_color_t::white;
     top_value2_bar.color(px);
     top_value2_bar.is_gradient(true);
+    top_value2_bar.back_color(uix_color_t::black);
     main_screen.register_control(top_value2_bar);
     
 
@@ -723,6 +732,7 @@ extern "C" void app_main() {
     b.y2-=2;
     bottom_value1_bar.bounds(b);
     bottom_value1_bar.color(uix_color_t::white);
+    bottom_value1_bar.back_color(uix_color_t::black);
     main_screen.register_control(bottom_value1_bar);
 
     b=bottom_value2_label.bounds();
@@ -732,6 +742,7 @@ extern "C" void app_main() {
     bottom_value2_bar.bounds(b);
     px = uix_color_t::white;
     bottom_value2_bar.color(px);
+    bottom_value2_bar.back_color(uix_color_t::black);
     bottom_value2_bar.is_gradient(true);
     main_screen.register_control(bottom_value2_bar);
     
@@ -764,7 +775,13 @@ static uix_pixel to_color(const uint8_t* col_array) {
 #if LCD_BIT_DEPTH > 1
     return uix_pixel(col_array[0],col_array[1],col_array[2],col_array[3]);
 #else
-    return uix_pixel(255,255,255,255);
+    if(dark_mode) {
+        return uix_pixel(255,255,255,255);
+    } else {
+        return uix_pixel(0,0,0,255);
+        //return uix_pixel(255,255,255,255);
+        
+    }
 #endif
 }
 static void loop() {
@@ -796,7 +813,7 @@ static void loop() {
             response_screen_t& scr = resp.screen;
             screen_index = scr.index;
 #if LCD_BIT_DEPTH == 1
-            scr.flags &= 0xF0; // turn off gradients for monochrome dispalys
+            scr.flags &= 0xF0; // turn off gradients for monochrome displays
 #endif
             top_value1_max = scr.top_max1;
             strcpy(top_value1_suffix,scr.top_suffix1);
@@ -811,19 +828,35 @@ static void loop() {
             value1_label.text(top_label_text);
             value1_label.color(to_color(scr.top_label_color));
             top_value1_bar.color(to_color(scr.top_color1));
-            top_value1_bar.back_color(top_value1_bar.color().opacity(.25));
+#if LCD_BIT_DEPTH>1
+            top_value1_bar.back_color(top_value1_bar.color().blend(uix_color_t::black,.25));
+#else
+            top_value1_bar.back_color(uix_color_t::black);
+#endif
             top_value1_bar.is_gradient((scr.flags&(1<<0)));
             top_value2_bar.color(to_color(scr.top_color2));
-            top_value2_bar.back_color(top_value2_bar.color().opacity(.25));
+#if LCD_BIT_DEPTH>1
+            top_value2_bar.back_color(top_value2_bar.color().blend(uix_color_t::black,.25));
+#else
+            top_value2_bar.back_color(uix_color_t::black);
+#endif
             top_value2_bar.is_gradient((scr.flags&(1<<1)));
             strcpy(bottom_label_text,scr.bottom_label);
             value2_label.text(bottom_label_text);
             value2_label.color(to_color(scr.bottom_label_color));
             bottom_value1_bar.color(to_color(scr.bottom_color1));
-            bottom_value1_bar.back_color(bottom_value1_bar.color().opacity(.25));
+#if LCD_BIT_DEPTH>1
+            bottom_value1_bar.back_color(bottom_value1_bar.color().blend(uix_color_t::black,.25));
+#else
+            bottom_value1_bar.back_color(uix_color_t::black);
+#endif
             top_value1_bar.is_gradient((scr.flags&(1<<2)));
             bottom_value2_bar.color(to_color(scr.bottom_color2));
-            bottom_value2_bar.back_color(bottom_value2_bar.color().opacity(.25));
+#if LCD_BIT_DEPTH>1
+            bottom_value2_bar.back_color(bottom_value2_bar.color().blend(uix_color_t::black,.25));
+#else
+            bottom_value2_bar.back_color(uix_color_t::black);
+#endif
             bottom_value2_bar.is_gradient((scr.flags&(1<<3)));
 #if LCD_HEIGHT > 128
             history_graph.clear_data();
