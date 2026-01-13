@@ -41,4 +41,4 @@ Waveshare ESP32S3 4.3 inch.bin
 /EspMon/bin/Release/EspMon.InstallState
 src/lib/htcw_esp_io_expander
 src/lib/htcw_esp_panel
-EspMon/bin/Debug/paths.map.txt
+EspMon/bin/Debug/*

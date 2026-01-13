@@ -30,7 +30,7 @@ static void uix_on_flush(const rect16& bounds,const void *bitmap, void* state) {
 #endif
 }
 #if defined(TOUCH_BUS) || defined(BUTTON)
-static bool pressed = false;
+static TickType_t pressed = 0;
 #endif
 const_buffer_stream text_font_stm(bungee,sizeof(bungee));
 
@@ -535,35 +535,80 @@ static char bottom_value2_text[12]={0};
 static char bottom_value2_suffix[4]={0};
 static label_t disconnected_label;
 
-#if defined(TOUCH_BUS) || defined(BUTTON)
-static void update_input() {
-    if(disconnected_label.visible()) {
-        return;
+static void refresh_display() {
+    while(disp.dirty()) {
+        disp.update();
     }
+}
+#if defined(TOUCH_BUS) || defined(BUTTON)
+static void switch_light_dark_mode() {
+    if(main_screen.background_color()==color_t::black) {
+        main_screen.background_color(color_t::white);
+        value1_label.background_color(uix_color_t::white);
+        value2_label.background_color(uix_color_t::white);
+        top_value1_label.color(uix_color_t::black);
+        top_value1_label.background_color(uix_color_t::white);
+        top_value2_label.color(uix_color_t::black);
+        top_value2_label.background_color(uix_color_t::white);
+        bottom_value1_label.color(uix_color_t::black);
+        bottom_value1_label.background_color(uix_color_t::white);
+        bottom_value2_label.color(uix_color_t::black);
+        bottom_value1_label.background_color(uix_color_t::white);
+        disconnected_label.background_color(uix_color_t::white);
+        disconnected_label.color(uix_color_t::black);
+        refresh_display();
+    } else {
+        main_screen.background_color(color_t::black);
+        value1_label.background_color(uix_color_t::black);
+        value2_label.background_color(uix_color_t::black);
+        top_value1_label.color(uix_color_t::white);
+        top_value1_label.background_color(uix_color_t::black);
+        top_value2_label.color(uix_color_t::white);
+        top_value2_label.background_color(uix_color_t::black);
+        bottom_value1_label.color(uix_color_t::white);
+        bottom_value1_label.background_color(uix_color_t::black);
+        bottom_value2_label.color(uix_color_t::white);
+        bottom_value2_label.background_color(uix_color_t::black);
+        disconnected_label.background_color(uix_color_t::black);
+        disconnected_label.color(uix_color_t::white);
+        refresh_display();
+    }
+}
+static void update_input() {
 #ifdef TOUCH_BUS
     panel_touch_update();
     uint16_t x,y,s;
     size_t count = 1;
     panel_touch_read_raw(&count,&x,&y,&s);
     if(count>0) {
-        pressed = true;
-    } else {
-        if(pressed) {
-            screen_index++;
-            serial_write(0,screen_index);
+        if(pressed==0) {
+            pressed = xTaskGetTickCount();
         }
-        pressed = false;
+    } else {
+        if(pressed>0) {
+            if(xTaskGetTickCount()>=pressed+pdMS_TO_TICKS(250)) {
+                switch_light_dark_mode();
+            } else if(!disconnected_label.visible()) {
+                screen_index++;
+                serial_write(0,screen_index);
+            }
+        }
+        pressed = 0;
     }
 #endif
 #ifdef BUTTON
     if(panel_button_read_all()) {
-        pressed = true;
+        if(pressed==0) {
+            pressed = xTaskGetTickCount();
+        }
     } else {
-        if(pressed) {
+        if(xTaskGetTickCount()>=pressed+pdMS_TO_TICKS(250)) {
+            switch_light_dark_mode();
+        } else if(!disconnected_label.visible()) {
             screen_index++;
             serial_write(0,screen_index);
         }
-        pressed = false;
+        pressed = 0;
     }
 #endif
 }
@@ -581,11 +626,7 @@ static void loop_task(void* arg) {
         loop();
     }
 }
-static void refresh_display() {
-    while(disp.dirty()) {
-        disp.update();
-    }
-}
+
 extern "C" void app_main() {
 #ifdef BUTTON
     panel_button_init();
