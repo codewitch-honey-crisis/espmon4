@@ -1,8 +1,10 @@
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
+#include "nvs_flash.h"
+#include "nvs.h"
 #include <memory.h>
+#include <stdio.h>
 #include "panel.h"
 #include <gfx.hpp>
 #include <uix.hpp>
@@ -578,6 +580,8 @@ static void switch_light_dark_mode() {
     }
     dark_mode=!dark_mode;
 }
+static nvs_handle_t storage_handle = 0;
+
 static void update_input() {
 #ifdef TOUCH_BUS
     panel_touch_update();
@@ -592,6 +596,8 @@ static void update_input() {
         if(pressed>0) {
             if(xTaskGetTickCount()>=pressed+pdMS_TO_TICKS(250)) {
                 switch_light_dark_mode();
+                nvs_set_u8(storage_handle,"dark",(uint8_t)dark_mode);
+                nvs_commit(storage_handle);
             } else if(!disconnected_label.visible()) {
                 screen_index++;
                 serial_write(0,screen_index);
@@ -609,6 +615,8 @@ static void update_input() {
         if(pressed>0) {
             if(xTaskGetTickCount()>=pressed+pdMS_TO_TICKS(250)) {
                 switch_light_dark_mode();
+                nvs_set_u8(storage_handle,"dark",(uint8_t)dark_mode);
+                nvs_commit(storage_handle);
             } else if(!disconnected_label.visible()) {
                 screen_index++;
                 serial_write(0,screen_index);
@@ -632,7 +640,7 @@ static void loop_task(void* arg) {
         loop();
     }
 }
-
+static bool screen_populated = false;
 extern "C" void app_main() {
 #ifdef BUTTON
     panel_button_init();
@@ -650,6 +658,16 @@ extern "C" void app_main() {
 #ifdef LCD_BCKL_PWM
     panel_lcd_backlight(64);
 #endif
+    esp_err_t err = nvs_flash_init(); 
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        // NVS partition was truncated and needs to be erased
+        // Retry nvs_flash_init
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ESP_ERROR_CHECK(nvs_flash_init());
+    } else {
+        ESP_ERROR_CHECK(err);
+    }
+    
     serial_init();
     disp.buffer_size(LCD_TRANSFER_SIZE);
     disp.buffer1((uint8_t*)panel_lcd_transfer_buffer());
@@ -764,9 +782,26 @@ extern "C" void app_main() {
     disconnected_label.text("[ disconnected ]");
     disconnected_label.text_justify(uix_justify::center);
     main_screen.register_control(disconnected_label);
-
+    ESP_ERROR_CHECK(nvs_open("storage", NVS_READWRITE, &storage_handle));
+    uint8_t tmp;
+    err = nvs_get_u8(storage_handle, "screen", &tmp);
+    if(err==ESP_OK) {
+        screen_index=tmp;
+        printf("opening screen is %d\n",screen_index);
+    }
+    dark_mode = false;
+    err = nvs_get_u8(storage_handle, "dark", &tmp);
+    if(err==ESP_OK) {
+        dark_mode=tmp;
+    }
+    nvs_commit(storage_handle);
     disp.active_screen(main_screen);
-    refresh_display();
+    if(!dark_mode) {
+        dark_mode=true;
+        switch_light_dark_mode();
+    } else {
+        refresh_display();
+    }
     TaskHandle_t loop_handle;
     xTaskCreate(loop_task,"loop_task",4096,nullptr,20,&loop_handle);
 }
@@ -802,11 +837,16 @@ static void loop() {
         if(disconnected_label.visible()) {
             disconnected_label.visible(false);
             refresh_display();
-            screen_index = -1;
+            screen_populated = false;
         }
         if(cmd==0) { // new screen
+            screen_populated = true;
             response_screen_t& scr = resp.screen;
+            
+            nvs_set_u8(storage_handle,"screen",(uint8_t)scr.index);
+            nvs_commit(storage_handle);
             screen_index = scr.index;
+        
 #if LCD_BIT_DEPTH == 1
             scr.flags &= 0xF0; // turn off gradients for monochrome displays
 #endif
@@ -964,7 +1004,13 @@ static void loop() {
     if(xTaskGetTickCount()>=ts+pdMS_TO_TICKS(100)) {
         ts=xTaskGetTickCount();
         ++ts_count;
-        serial_write(screen_index==-1?0:1,screen_index==-1?0:screen_index);
+        if(!screen_populated) {
+            // printf("populate screen index: %d\n",screen_index);;
+            serial_write(0,screen_index==-1?0:screen_index);
+        } else {
+            // printf("populate screen data: %d\n",screen_index);;
+            serial_write(screen_index==-1?0:1,screen_index==-1?0:screen_index);
+        }
     }
 #if defined(TOUCH_BUS) || defined(BUTTON)
     update_input();
