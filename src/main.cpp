@@ -18,7 +18,7 @@ using namespace uix;
 static uix::display disp;
 #if LCD_SYNC_TRANSFER == 0
 // indicates the LCD DMA transfer is complete
-void panel_lcd_flush_complete(void) {
+IRAM_ATTR void panel_lcd_flush_complete(void) {
     disp.flush_complete();
 }
 #endif
@@ -642,6 +642,15 @@ static void loop_task(void* arg) {
 }
 static bool screen_populated = false;
 extern "C" void app_main() {
+    esp_err_t err = nvs_flash_init(); 
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        // NVS partition was truncated and needs to be erased
+        // Retry nvs_flash_init
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ESP_ERROR_CHECK(nvs_flash_init());
+    } else {
+        ESP_ERROR_CHECK(err);
+    }
 #ifdef BUTTON
     panel_button_init();
 #endif
@@ -658,16 +667,6 @@ extern "C" void app_main() {
 #ifdef LCD_BCKL_PWM
     panel_lcd_backlight(64);
 #endif
-    esp_err_t err = nvs_flash_init(); 
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        // NVS partition was truncated and needs to be erased
-        // Retry nvs_flash_init
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ESP_ERROR_CHECK(nvs_flash_init());
-    } else {
-        ESP_ERROR_CHECK(err);
-    }
-    
     serial_init();
     disp.buffer_size(LCD_TRANSFER_SIZE);
     disp.buffer1((uint8_t*)panel_lcd_transfer_buffer());
@@ -793,8 +792,10 @@ extern "C" void app_main() {
     err = nvs_get_u8(storage_handle, "dark", &tmp);
     if(err==ESP_OK) {
         dark_mode=tmp;
+    } else {
+        dark_mode = true; // will be inverted;
     }
-    nvs_commit(storage_handle);
+    
     disp.active_screen(main_screen);
     if(!dark_mode) {
         dark_mode=true;
@@ -844,7 +845,7 @@ static void loop() {
             response_screen_t& scr = resp.screen;
             
             nvs_set_u8(storage_handle,"screen",(uint8_t)scr.index);
-            nvs_commit(storage_handle);
+            //nvs_commit(storage_handle);
             screen_index = scr.index;
         
 #if LCD_BIT_DEPTH == 1
