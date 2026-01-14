@@ -602,7 +602,6 @@ static void update_input() {
 #endif
 #ifdef BUTTON
     if(panel_button_read_all()) {
-        puts("pressed");
         if(pressed==0) {
             pressed = xTaskGetTickCount();
         }
@@ -792,11 +791,7 @@ static void loop() {
     static TickType_t ts = 0;
     static int ts_count = 0;
     static int index =0;
-    if(xTaskGetTickCount()>=ts+pdMS_TO_TICKS(100)) {
-        ts=xTaskGetTickCount();
-        ++ts_count;
-        serial_write(screen_index==-1?0:1,screen_index==-1?0:screen_index);
-    }
+    
     float v;
     
     to_avg& value=values[index];
@@ -965,6 +960,11 @@ static void loop() {
 #endif
         disconnected_label.visible(true);
         refresh_display();
+    }
+    if(xTaskGetTickCount()>=ts+pdMS_TO_TICKS(100)) {
+        ts=xTaskGetTickCount();
+        ++ts_count;
+        serial_write(screen_index==-1?0:1,screen_index==-1?0:screen_index);
     }
 #if defined(TOUCH_BUS) || defined(BUTTON)
     update_input();

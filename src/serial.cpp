@@ -83,7 +83,18 @@ int8_t serial_read_packet(response_t* out_resp) {
 void serial_write(int8_t cmd, uint8_t screen_index) {
 #ifndef TEST_NO_SERIAL
     uint8_t ba[] = {(uint8_t)cmd,screen_index};
-    uart_write_bytes(UART_NUM_0,ba,sizeof(ba));
+    if(0>uart_write_bytes(UART_NUM_0,ba,2)) {
+        int i=1000;
+        while(i-->0) {
+            vTaskDelay(5);
+            if(-1<uart_write_bytes(UART_NUM_0,ba,2)) {
+                break;
+            }
+        }
+        if(i==0) { return; }
+    }
+    
+    uart_wait_tx_done(UART_NUM_0,portMAX_DELAY);
 #else
     waiting = cmd;
     index_requested = screen_index;

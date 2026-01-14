@@ -157,6 +157,7 @@ namespace EspMon
                 int i = _port.ReadByte();
                 if (i == 0)
                 {
+                    System.Diagnostics.Debug.WriteLine("Screen request received");
                     int scr = _port.ReadByte();
                     var screens = _screensByPort[_port.PortName];
                     scr = scr % screens.Length;
@@ -179,7 +180,8 @@ namespace EspMon
                 }
                 else
                 {
-                    _port.ReadExisting();
+                    var str = _port.ReadExisting();
+                    System.Diagnostics.Debug.WriteLine("Read junk data: (unrecognized command {0} - {1})",i,str);
                 }
             }
             catch
@@ -248,7 +250,6 @@ namespace EspMon
                     foreach (var de in _updateVisitor.Paths)
                     {
                         writer.WriteLine(de.Key);
-                        System.Diagnostics.Debug.WriteLine("{0}: {1} ({2})", de.Key, de.Value, de.Value.GetType().Name);
                     }
                 }
                 _matchObjectCache.Clear();
